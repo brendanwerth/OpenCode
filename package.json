@@ -1,0 +1,31 @@
+{
+  "name": "codenexus",
+  "version": "0.1.0",
+  "description": "CodeNexus — a local AI coding agent (Claude Code / Codex variant) powered by OpenRouter.",
+  "main": "electron/main.js",
+  "author": "Brendan",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win"
+  },
+  "devDependencies": {
+    "electron": "^31.7.7",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.brendan.codenexus",
+    "productName": "CodeNexus",
+    "files": [
+      "electron/**/*",
+      "src/**/*"
+    ],
+    "win": {
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
+  }
+}

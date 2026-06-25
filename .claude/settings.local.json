@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm --version)",
+      "Bash(npx --version)",
+      "Bash(git --version)",
+      "PowerShell(npm install)",
+      "Bash(node --check electron/main.js)",
+      "Bash(node --check electron/preload.js)",
+      "Bash(node -e \"require\\('electron'\\); console.log\\('electron module resolves'\\)\")",
+      "PowerShell($env:ELECTRON_ENABLE_LOGGING=1; Start-Process -FilePath \"npm\" -ArgumentList \"start\" -WorkingDirectory \"C:\\\\Users\\\\Brendan\\\\Documents\\\\nexus\" -WindowStyle Hidden; Start-Sleep -Seconds 12; $procs = Get-Process electron -ErrorAction SilentlyContinue; if \\($procs\\) { \"Electron running: $\\($procs.Count\\) process\\(es\\)\" } else { \"No electron process found\" })",
+      "PowerShell(Get-Process | Where-Object { $_.MainWindowTitle -ne \"\" } | Select-Object ProcessName, MainWindowTitle | Format-Table -AutoSize)",
+      "PowerShell(Get-Process electron -ErrorAction SilentlyContinue)",
+      "PowerShell(Stop-Process -Force)",
+      "PowerShell(\"killed\")",
+      "PowerShell(Start-Process -FilePath \"npm\" -ArgumentList \"start\" -WorkingDirectory \"C:\\\\Users\\\\Brendan\\\\Documents\\\\nexus\" -WindowStyle Hidden; Start-Sleep -Seconds 10; Get-Process electron -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowTitle -ne \"\" } | Select-Object MainWindowTitle | Format-Table -AutoSize)",
+      "Bash(timeout 12 ./node_modules/.bin/electron .)",
+      "PowerShell(Start-Process -FilePath \"npm\" -ArgumentList \"start\" -WorkingDirectory \"C:\\\\Users\\\\Brendan\\\\Documents\\\\nexus\" -WindowStyle Hidden; Start-Sleep -Seconds 11; Get-Process electron -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowTitle -ne \"\" } | Select-Object MainWindowTitle | Format-Table -AutoSize)",
+      "Bash(node --input-type=module --check)"
+    ]
+  }
+}
