@@ -16,7 +16,8 @@
       "PowerShell(Start-Process -FilePath \"npm\" -ArgumentList \"start\" -WorkingDirectory \"C:\\\\Users\\\\Brendan\\\\Documents\\\\nexus\" -WindowStyle Hidden; Start-Sleep -Seconds 10; Get-Process electron -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowTitle -ne \"\" } | Select-Object MainWindowTitle | Format-Table -AutoSize)",
       "Bash(timeout 12 ./node_modules/.bin/electron .)",
       "PowerShell(Start-Process -FilePath \"npm\" -ArgumentList \"start\" -WorkingDirectory \"C:\\\\Users\\\\Brendan\\\\Documents\\\\nexus\" -WindowStyle Hidden; Start-Sleep -Seconds 11; Get-Process electron -ErrorAction SilentlyContinue | Where-Object { $_.MainWindowTitle -ne \"\" } | Select-Object MainWindowTitle | Format-Table -AutoSize)",
-      "Bash(node --input-type=module --check)"
+      "Bash(node --input-type=module --check)",
+      "Bash(node --check src/app.js)"
     ]
   }
 }
