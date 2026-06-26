@@ -261,6 +261,74 @@ ipcMain.handle('shell:exec', async (_e, { command, timeoutMs }) => {
 });
 
 // ---------------------------------------------------------------------------
+// Checkpoint primitives — snapshot a file's current state (for rewind) and
+// delete a file (to undo a creation). Both are workspace-sandboxed.
+// ---------------------------------------------------------------------------
+ipcMain.handle('fs:snapshot', async (_e, relPath) => {
+  const abs = resolveInWorkspace(relPath);
+  try {
+    const content = await fs.readFile(abs, 'utf8');
+    return { exists: true, content };
+  } catch {
+    return { exists: false, content: null };
+  }
+});
+
+ipcMain.handle('fs:delete', async (_e, relPath) => {
+  const abs = resolveInWorkspace(relPath);
+  try { await fs.unlink(abs); return { ok: true }; }
+  catch (e) { return { ok: false, error: e.message }; }
+});
+
+// ---------------------------------------------------------------------------
+// LLM streaming proxy. All provider traffic (OpenRouter / Anthropic / OpenAI)
+// flows through the main process so we never hit browser CORS limits and the
+// renderer keeps a single, uniform SSE stream to parse. Chunks are forwarded
+// to the renderer as raw decoded text via the `llm:chunk` channel.
+// ---------------------------------------------------------------------------
+const llmControllers = new Map();
+
+ipcMain.handle('llm:stream', async (_e, { requestId, url, headers, body }) => {
+  const ctrl = new AbortController();
+  llmControllers.set(requestId, ctrl);
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify(body),
+      signal: ctrl.signal
+    });
+    if (!res.ok) {
+      let detail = '';
+      try { detail = await res.text(); } catch {}
+      return { ok: false, status: res.status, error: detail.slice(0, 2000) };
+    }
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder('utf-8');
+    while (true) {
+      const { value, done } = await reader.read();
+      if (done) break;
+      const text = decoder.decode(value, { stream: true });
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.webContents.send('llm:chunk', { requestId, text });
+      }
+    }
+    return { ok: true };
+  } catch (err) {
+    if (err.name === 'AbortError') return { ok: false, aborted: true };
+    return { ok: false, error: err.message };
+  } finally {
+    llmControllers.delete(requestId);
+  }
+});
+
+ipcMain.handle('llm:abort', (_e, requestId) => {
+  const c = llmControllers.get(requestId);
+  if (c) { try { c.abort(); } catch {} }
+  return { ok: true };
+});
+
+// ---------------------------------------------------------------------------
 // Web tools — let the agent browse. No API key required: search uses
 // DuckDuckGo's HTML endpoint; fetch pulls a page and extracts readable text.
 // ---------------------------------------------------------------------------

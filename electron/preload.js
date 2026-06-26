@@ -22,6 +22,19 @@ contextBridge.exposeInMainWorld('nexus', {
   // Shell
   runCommand: (command, timeoutMs) => ipcRenderer.invoke('shell:exec', { command, timeoutMs }),
 
+  // Checkpoints
+  snapshotFile: (path) => ipcRenderer.invoke('fs:snapshot', path),
+  deleteFile: (path) => ipcRenderer.invoke('fs:delete', path),
+
+  // LLM streaming proxy (all providers route through the main process)
+  llmStream: (opts) => ipcRenderer.invoke('llm:stream', opts),
+  llmAbort: (requestId) => ipcRenderer.invoke('llm:abort', requestId),
+  onLlmChunk: (callback) => {
+    const handler = (_e, data) => callback(data);
+    ipcRenderer.on('llm:chunk', handler);
+    return () => ipcRenderer.off('llm:chunk', handler);
+  },
+
   // Web
   webSearch: (query, limit) => ipcRenderer.invoke('web:search', { query, limit }),
   webFetch: (url, maxChars) => ipcRenderer.invoke('web:fetch', { url, maxChars }),
