@@ -196,6 +196,14 @@ textarea { resize: none; }
 .field input[type="text"], .field input[type="password"], .field input[type="search"], .field textarea, .field select {
     width: 100%; padding: 8px 10px; border: 1px solid var(--line); background: var(--panel); border-radius: 6px; outline: none; font-size: 12.5px; color: var(--ink);
 }
+.field select {
+    -webkit-appearance: none; appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%2371717a' d='M1 1l5 5 5-5'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 10px center; background-size: 11px;
+    padding-right: 30px; min-width: 0; max-width: 100%;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.field select option { font-size: 12.5px; }
 .field input:focus, .field textarea:focus, .field select:focus { border-color: var(--ink); box-shadow: 0 0 0 3px var(--line-soft); }
 .field-hint { font-size: 11.5px; color: var(--muted); margin-top: 4px; line-height: 1.4; }
 .seg { display: flex; background: var(--line-soft); border-radius: 7px; padding: 3px; gap: 2px; margin-bottom: 14px; }
@@ -279,7 +287,8 @@ textarea { resize: none; }
 .key-row .key-label { font-size: 11px; font-weight: 600; color: var(--muted); width: 78px; flex-shrink: 0; }
 .key-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--faint); flex-shrink: 0; }
 .key-dot.set { background: var(--good); }
-.model-slot { border: 1px solid var(--line); border-radius: 8px; padding: 10px; margin-bottom: 10px; background: var(--panel); }
+.model-slot { border: 1px solid var(--line); border-radius: 8px; padding: 10px; margin-bottom: 10px; background: var(--panel); overflow: hidden; min-width: 0; }
+.model-slot .model-select { display: block; width: 100%; max-width: 100%; box-sizing: border-box; }
 .model-slot.worker.disabled { opacity: 0.45; pointer-events: none; }
 .model-slot-title { font-size: 11px; font-weight: 600; color: var(--ink); margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
 .model-slot-title .tier { font-size: 9.5px; text-transform: uppercase; letter-spacing: 0.03em; padding: 1px 6px; border-radius: 8px; }
