@@ -1,4 +1,4 @@
-# CodeNexus
+# OpenCode
 
 A local AI coding agent for Windows — a Claude Code / Codex–style tool that you point at your own API keys. Bring **Anthropic**, **OpenAI**, or **OpenRouter** (or all three) and let it read, edit, and run code in a project folder until the task is done.
 
@@ -6,7 +6,7 @@ It aims to be *better* than a terminal coding agent by doing things a GUI can th
 
 ## What makes it better than the terminal
 
-- **🧠 Smart multi-model routing** — assign a strong **planner** model and a cheap **worker** model. CodeNexus auto-routes per step: the worker handles read-only exploration (reads, greps, searches), the planner handles writes, decisions, and error recovery. Long tasks get dramatically cheaper without losing quality where it matters.
+- **🧠 Smart multi-model routing** — assign a strong **planner** model and a cheap **worker** model. OpenCode auto-routes per step: the worker handles read-only exploration (reads, greps, searches), the planner handles writes, decisions, and error recovery. Long tasks get dramatically cheaper without losing quality where it matters.
 - **📋 Plan-first mode** — the agent drafts an ordered, **editable** plan and waits for your approval before it touches any code. Catch a wrong approach before tokens are spent. Add, edit, or delete steps inline, then Approve & Run.
 - **📝 Visual diff review** — every file change is shown as a colored, line-numbered diff. **Accept or reject** each change before it's written to disk. No more scrolling a terminal wall of text.
 - **⏪ Checkpoints & rewind** — every agent step that edits files is journaled. A timeline in the left rail lets you **rewind** to any prior point with one click — files are restored and the conversation truncated. Instant, visual time-travel.
@@ -44,7 +44,7 @@ Produces an NSIS installer (`.exe`) under `dist/`.
 ## How it works
 
 - `electron/main.js` — privileged main process: window, filesystem + shell IPC (sandboxed to the workspace), checkpoint snapshot/delete primitives, and a **streaming LLM proxy** so every provider streams uniformly with no browser-CORS limits.
-- `electron/preload.js` — exposes a minimal `window.nexus` bridge to the UI.
+- `electron/preload.js` — exposes a minimal `window.opencode` bridge to the UI.
 - `src/index.html` — the interface (chat, model pickers, timeline, diff/plan cards).
 - `src/app.js` — provider adapters (OpenAI/OpenRouter + Anthropic), the streaming agent loop, smart routing, plan-first mode, visual diff review, and checkpoints.
 

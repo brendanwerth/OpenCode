@@ -1,11 +1,11 @@
 // ============================================================================
 // Preload — the only bridge between the privileged main process and the UI.
-// Exposes a minimal, explicit `window.nexus` API; the renderer never touches
+// Exposes a minimal, explicit `window.opencode` API; the renderer never touches
 // Node or ipcRenderer directly.
 // ============================================================================
 const { contextBridge, ipcRenderer } = require('electron');
 
-contextBridge.exposeInMainWorld('nexus', {
+contextBridge.exposeInMainWorld('opencode', {
   // Workspace
   pickFolder: () => ipcRenderer.invoke('dialog:pickFolder'),
   getWorkspace: () => ipcRenderer.invoke('workspace:get'),

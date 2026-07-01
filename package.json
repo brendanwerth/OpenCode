@@ -1,7 +1,7 @@
 {
-  "name": "codenexus",
+  "name": "opencode",
   "version": "0.1.0",
-  "description": "CodeNexus — a local AI coding agent (Claude Code / Codex variant) powered by OpenRouter.",
+  "description": "OpenCode — a local AI coding agent powered by OpenRouter.",
   "main": "electron/main.js",
   "author": "Brendan",
   "license": "MIT",
@@ -14,8 +14,8 @@
     "electron-builder": "^24.13.3"
   },
   "build": {
-    "appId": "com.brendan.codenexus",
-    "productName": "CodeNexus",
+    "appId": "com.brendan.opencode",
+    "productName": "OpenCode",
     "files": [
       "electron/**/*",
       "src/**/*"

@@ -1,5 +1,5 @@
 // ============================================================================
-// CodeNexus — Electron main process
+// OpenCode — Electron main process
 // Owns the window and all privileged operations (filesystem, shell). The
 // renderer can only reach these through IPC, and every path is sandboxed to
 // the currently selected workspace root.
@@ -20,7 +20,7 @@ function createWindow() {
     minWidth: 900,
     minHeight: 600,
     backgroundColor: '#fafaf9',
-    title: 'CodeNexus',
+    title: 'OpenCode',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -93,7 +93,7 @@ function rel(p) {
 ipcMain.handle('dialog:pickFolder', async () => {
   const result = await dialog.showOpenDialog(mainWindow, {
     properties: ['openDirectory', 'createDirectory'],
-    title: 'Choose a project folder for CodeNexus'
+    title: 'Choose a project folder for OpenCode'
   });
   if (result.canceled || !result.filePaths.length) return null;
   workspaceRoot = result.filePaths[0];
@@ -110,7 +110,7 @@ ipcMain.handle('workspace:set', (_e, p) => {
 // ---------------------------------------------------------------------------
 // OpenRouter OAuth via a localhost loopback callback.
 // OpenRouter only accepts `localhost` (any port) or https:443/3000 callback
-// URLs — custom schemes like codenexus:// are rejected. So we bind a throwaway
+// URLs — custom schemes like opencode:// are rejected. So we bind a throwaway
 // HTTP server on a random port, open the auth page in the user's browser, and
 // catch the ?code= redirect here, then hand it to the renderer.
 // ---------------------------------------------------------------------------
@@ -125,7 +125,7 @@ ipcMain.handle('oauth:start', async () => {
       res.writeHead(200, { 'Content-Type': 'text/html' });
       res.end(`<!doctype html><html><body style="font-family:system-ui;text-align:center;padding:3rem;color:#09090b">
         <h2>✅ OpenRouter connected</h2>
-        <p>You can close this tab and return to CodeNexus.</p></body></html>`);
+        <p>You can close this tab and return to OpenCode.</p></body></html>`);
       try { server.close(); } catch {}
       oauthServer = null;
       if (mainWindow && !mainWindow.isDestroyed()) {
@@ -160,6 +160,8 @@ ipcMain.handle('fs:read', async (_e, relPath) => {
 
 ipcMain.handle('fs:write', async (_e, { path: relPath, content }) => {
   const abs = resolveInWorkspace(relPath);
+  // Reject paths that already exist as a directory, or that look like a directory (no extension, trailing slash)
+  try { const st = await fs.stat(abs); if (st.isDirectory()) throw new Error(`"${relPath}" is a directory, not a file. Provide a full file path including the filename.`); } catch (e) { if (e.code !== 'ENOENT') throw e; }
   await fs.mkdir(path.dirname(abs), { recursive: true });
   await fs.writeFile(abs, content, 'utf8');
   return { ok: true, path: rel(abs), bytes: Buffer.byteLength(content, 'utf8') };

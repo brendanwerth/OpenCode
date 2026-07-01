@@ -1,5 +1,5 @@
 // ============================================================================
-// CodeNexus renderer — chat UI + agentic tool-calling loop.
+// OpenCode renderer — chat UI + agentic tool-calling loop.
 //
 // What makes this different from a plain terminal coding agent:
 //   • Multi-provider — native Anthropic + OpenAI + OpenRouter (bring your key).
@@ -9,7 +9,7 @@
 //   • Visual diff review — every file change is shown as a diff you accept/reject.
 //   • Checkpoints & rewind — file edits are journaled; jump back in one click.
 //
-// All provider HTTP is proxied through the Electron main process (window.nexus),
+// All provider HTTP is proxied through the Electron main process (window.opencode),
 // so there are no browser-CORS limits and every provider streams uniformly.
 // ============================================================================
 
@@ -21,7 +21,7 @@ const mdRender = (s) => clean(md.parse(s || ''));
 // Default agent system prompt (Claude Code / Codex style).
 // ---------------------------------------------------------------------------
 const DEFAULT_SYSTEM_PROMPT =
-`You are CodeNexus, an autonomous coding agent running on the user's machine with direct access to their project folder and shell.
+`You are OpenCode, an autonomous coding agent running on the user's machine with direct access to their project folder and shell.
 
 You operate in an agentic loop: think, call a tool, observe the result, and continue until the task is fully done. Work decisively — don't ask for permission to read files or explore.
 
@@ -263,7 +263,7 @@ function serializeState() {
 
 function save() {
   try {
-    localStorage.setItem('codenexus_state', JSON.stringify(serializeState()));
+    localStorage.setItem('opencode_state', JSON.stringify(serializeState()));
   } catch (e) {
     // Checkpoints journal full file contents and can overflow the ~5MB quota.
     // Shed the heaviest payload — older checkpoints' file snapshots — and retry.
@@ -272,7 +272,7 @@ function save() {
       all.forEach(s => (s.checkpoints || []).forEach((cp, i, arr) => {
         if (i < arr.length - 4) { cp.files = {}; cp._shed = true; } // keep last 4 rewindable
       }));
-      localStorage.setItem('codenexus_state', JSON.stringify(serializeState()));
+      localStorage.setItem('opencode_state', JSON.stringify(serializeState()));
       if (!save._warned) { toast('Storage near full — older checkpoints are no longer rewindable', 'error'); save._warned = true; }
     } catch (e2) {
       console.error('save failed even after shedding checkpoints:', e2);
@@ -283,7 +283,7 @@ function save() {
 function load() {
   els.systemPrompt.value = DEFAULT_SYSTEM_PROMPT;
   try {
-    const raw = localStorage.getItem('codenexus_state');
+    const raw = localStorage.getItem('opencode_state');
     if (!raw) return;
     const p = JSON.parse(raw);
     if (p.keys) state.keys = { ...state.keys, ...p.keys };
@@ -327,7 +327,7 @@ function refreshKeyDots() {
 // Workspace
 // ---------------------------------------------------------------------------
 async function refreshWorkspaceLabel() {
-  try { state.workspace = await window.nexus.getWorkspace(); }
+  try { state.workspace = await window.opencode.getWorkspace(); }
   catch (e) { state.workspace = null; }
   if (state.workspace) {
     els.workspacePath.textContent = state.workspace;
@@ -339,7 +339,7 @@ async function refreshWorkspaceLabel() {
 }
 
 async function pickFolder() {
-  const p = await window.nexus.pickFolder();
+  const p = await window.opencode.pickFolder();
   if (p) { await refreshWorkspaceLabel(); toast('Workspace set', 'good'); }
 }
 
@@ -441,8 +441,8 @@ async function exchangeOpenRouterCode(code) {
 }
 
 function handleOpenRouterAuth() {
-  if (window.nexus?.onOAuthCallback) {
-    window.nexus.onOAuthCallback(({ code }) => { if (code) exchangeOpenRouterCode(code); });
+  if (window.opencode?.onOAuthCallback) {
+    window.opencode.onOAuthCallback(({ code }) => { if (code) exchangeOpenRouterCode(code); });
   }
   const code = new URLSearchParams(window.location.search).get('code');
   if (code) {
@@ -536,7 +536,7 @@ function renderWelcome() {
   w.innerHTML = `
     <div class="welcome-mark">&lt;/&gt;</div>
     <div class="welcome-h">What should we build?</div>
-    <div class="welcome-p">Open a project folder, bring an Anthropic / OpenAI / OpenRouter key, and describe a task. CodeNexus plans, edits, runs, and verifies — with diff review and one-click rewind.</div>
+    <div class="welcome-p">Open a project folder, bring an Anthropic / OpenAI / OpenRouter key, and describe a task. OpenCode plans, edits, runs, and verifies — with diff review and one-click rewind.</div>
     <div id="suggestions-bin"></div>`;
   els.messages.appendChild(w);
   SUGGESTIONS.forEach(sug => {
@@ -624,7 +624,7 @@ function renderMessages() {
       container.appendChild(buildTextMsg('user', 'You', '', m.content));
     } else if (m.role === 'assistant') {
       if (m.content && m.content.trim()) {
-        container.appendChild(buildTextMsg('assistant', 'CodeNexus', m._engine || plannerLabel(), m.content, true));
+        container.appendChild(buildTextMsg('assistant', 'OpenCode', m._engine || plannerLabel(), m.content, true));
       }
       if (m.tool_calls && m.tool_calls.length) {
         const wrap = document.createElement('div');
@@ -840,7 +840,7 @@ function requestApproval(container, name, args) {
     box.className = 'approval';
     const detail = name === 'run_command' ? args.command : JSON.stringify(args, null, 2);
     box.innerHTML = `
-      <div class="approval-head">⚠️ CodeNexus wants to run a command</div>
+      <div class="approval-head">⚠️ OpenCode wants to run a command</div>
       <div class="approval-detail">${clean(detail)}</div>
       <div class="approval-actions">
         <button class="approval-btn approve">Approve</button>
@@ -866,7 +866,7 @@ function requestApproval(container, name, args) {
 async function journalFile(cp, relPath) {
   if (cp.files[relPath] !== undefined) return; // already captured pre-state this step
   try {
-    const snap = await window.nexus.snapshotFile(relPath);
+    const snap = await window.opencode.snapshotFile(relPath);
     cp.files[relPath] = snap.exists ? snap.content : null;
   } catch { cp.files[relPath] = null; }
 }
@@ -914,8 +914,8 @@ async function rewindTo(index) {
   let restored = 0, deleted = 0;
   for (const p in restore) {
     try {
-      if (restore[p] === null) { await window.nexus.deleteFile(p); deleted++; }
-      else { await window.nexus.writeFile(p, restore[p]); restored++; }
+      if (restore[p] === null) { await window.opencode.deleteFile(p); deleted++; }
+      else { await window.opencode.writeFile(p, restore[p]); restored++; }
     } catch (e) { console.error('rewind restore failed for', p, e); }
   }
   s.messages = s.messages.slice(0, cp.msgIndex);
@@ -930,31 +930,31 @@ async function rewindTo(index) {
 // Tool execution
 // ---------------------------------------------------------------------------
 async function executeTool(name, args) {
-  if (!window.nexus) throw new Error('Native bridge unavailable (not running in Electron).');
+  if (!window.opencode) throw new Error('Native bridge unavailable (not running in Electron).');
   switch (name) {
     case 'list_dir': {
-      const entries = await window.nexus.listDir(args.path || '.');
+      const entries = await window.opencode.listDir(args.path || '.');
       return entries.map(e => (e.dir ? e.name + '/' : e.name)).join('\n') || '(empty directory)';
     }
     case 'read_file': {
-      const content = await window.nexus.readFile(args.path);
+      const content = await window.opencode.readFile(args.path);
       return content === '' ? '(empty file)' : content;
     }
     case 'write_file': {
-      const r = await window.nexus.writeFile(args.path, args.content ?? '');
+      const r = await window.opencode.writeFile(args.path, args.content ?? '');
       return `Wrote ${r.bytes} bytes to ${r.path}`;
     }
     case 'edit_file': {
-      const r = await window.nexus.editFile(args.path, args.old_string, args.new_string, !!args.replace_all);
+      const r = await window.opencode.editFile(args.path, args.old_string, args.new_string, !!args.replace_all);
       return `Edited ${r.path} (${r.replaced} replacement${r.replaced === 1 ? '' : 's'})`;
     }
     case 'grep': {
-      const hits = await window.nexus.grep(args.pattern, args.glob);
+      const hits = await window.opencode.grep(args.pattern, args.glob);
       if (!hits.length) return 'No matches.';
       return hits.map(h => `${h.file}:${h.line}: ${h.text}`).join('\n');
     }
     case 'run_command': {
-      const r = await window.nexus.runCommand(args.command);
+      const r = await window.opencode.runCommand(args.command);
       let out = '';
       if (r.stdout) out += r.stdout;
       if (r.stderr) out += (out ? '\n' : '') + '[stderr]\n' + r.stderr;
@@ -962,12 +962,12 @@ async function executeTool(name, args) {
       return out.trim();
     }
     case 'web_search': {
-      const hits = await window.nexus.webSearch(args.query, args.limit);
+      const hits = await window.opencode.webSearch(args.query, args.limit);
       if (!hits.length) return 'No results.';
       return hits.map((h, i) => `${i + 1}. ${h.title}\n   ${h.url}\n   ${h.snippet}`).join('\n\n');
     }
     case 'fetch_url': {
-      const r = await window.nexus.webFetch(args.url);
+      const r = await window.opencode.webFetch(args.url);
       const head = r.title ? `# ${r.title}\n(${r.url})\n\n` : `(${r.url})\n\n`;
       return head + (r.text || '(no readable text extracted)');
     }
@@ -1045,7 +1045,7 @@ function buildRequest(provider, modelId, rawMessages, system) {
   // OpenAI + OpenRouter share the chat/completions shape.
   const isOR = provider === 'openrouter';
   const headers = { 'Content-Type': 'application/json', 'Authorization': `Bearer ${getKey(provider)}` };
-  if (isOR) { headers['HTTP-Referer'] = 'https://codenexus.local'; headers['X-Title'] = 'CodeNexus'; }
+  if (isOR) { headers['HTTP-Referer'] = 'https://opencode.local'; headers['X-Title'] = 'OpenCode'; }
   const body = {
     model: modelId,
     temperature: temp,
@@ -1139,7 +1139,7 @@ function streamCompletion(provider, modelId, rawMessages, system, onText) {
 
     let res;
     try {
-      res = await window.nexus.llmStream({ requestId, url: req.url, headers: req.headers, body: req.body });
+      res = await window.opencode.llmStream({ requestId, url: req.url, headers: req.headers, body: req.body });
     } catch (e) {
       llmListeners.delete(requestId);
       return reject(e);
@@ -1174,7 +1174,7 @@ const llmListeners = new Map();
 // ---------------------------------------------------------------------------
 function stopAgent() {
   state.stopRequested = true;
-  if (state.currentRequestId) window.nexus.llmAbort(state.currentRequestId);
+  if (state.currentRequestId) window.opencode.llmAbort(state.currentRequestId);
 }
 
 async function runAgent() {
@@ -1233,7 +1233,7 @@ async function runAgent() {
       liveMsg.innerHTML = `
         <div class="msg-avatar assistant">N</div>
         <div class="msg-content">
-          <div class="msg-meta"><span>CodeNexus</span><span class="msg-meta-tag">${clean(engine)}</span>${state.routing ? `<span class="msg-meta-tag">${slot}</span>` : ''}</div>
+          <div class="msg-meta"><span>OpenCode</span><span class="msg-meta-tag">${clean(engine)}</span>${state.routing ? `<span class="msg-meta-tag">${slot}</span>` : ''}</div>
           <div class="msg-body"></div>
         </div>`;
       const liveBody = liveMsg.querySelector('.msg-body');
@@ -1338,7 +1338,7 @@ async function runAgent() {
             tcard.setStatus('wait', 'review');
             let oldStr = '', newStr = '';
             try {
-              const snap = await window.nexus.snapshotFile(args.path);
+              const snap = await window.opencode.snapshotFile(args.path);
               oldStr = snap.exists ? snap.content : '';
               if (name === 'write_file') newStr = args.content ?? '';
               else { // edit_file — compute the preview result
@@ -1465,8 +1465,8 @@ function wire() {
   });
 
   els.orLoginBtn.onclick = async () => {
-    if (window.nexus?.startOAuth) {
-      const r = await window.nexus.startOAuth();
+    if (window.opencode?.startOAuth) {
+      const r = await window.opencode.startOAuth();
       if (r?.ok) toast('Opening OpenRouter in your browser…');
       else toast('Could not start OAuth: ' + (r?.error || 'unknown'), 'error');
     } else {
@@ -1498,7 +1498,7 @@ function wire() {
     s.messages.forEach(m => {
       if (m.role === 'user') out += `## You\n\n${m.content}\n\n`;
       else if (m.role === 'assistant') {
-        if (m.content) out += `## CodeNexus\n\n${m.content}\n\n`;
+        if (m.content) out += `## OpenCode\n\n${m.content}\n\n`;
         (m.tool_calls || []).forEach(tc => out += `> 🔧 \`${tc.function.name}(${tc.function.arguments})\`\n\n`);
       } else if (m.role === 'tool') out += `> ↳ ${m.content.slice(0, 500)}\n\n`;
     });
@@ -1515,8 +1515,8 @@ function wire() {
 // ---------------------------------------------------------------------------
 async function main() {
   // Register the single global chunk dispatcher for the streaming proxy.
-  if (window.nexus?.onLlmChunk) {
-    window.nexus.onLlmChunk(({ requestId, text }) => {
+  if (window.opencode?.onLlmChunk) {
+    window.opencode.onLlmChunk(({ requestId, text }) => {
       const fn = llmListeners.get(requestId);
       if (fn) fn(text);
     });
